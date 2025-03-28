@@ -15,7 +15,7 @@
             "#b30ba7"
         ],
         "TEXT_NORMAL": [
-            "#ffffff"
+            "#42b3f5"
         ],
         "TEXT_MUTED": [
             "#7b0a8a"
@@ -33,7 +33,7 @@
             "#7a0975"
         ],
         "INTERACTIVE_MUTED": [
-            "#54065e"
+            "#42b3f5"
         ],
         "BACKGROUND_PRIMARY": [
             "#82abed"
@@ -108,10 +108,10 @@
             "#b30ba7"
         ],
         "REDESIGN_ACTIVITY_CARD_BORDER": [
-            "#2d0333"
+            "#42b3f5"
         ],
         "REDESIGN_ACTIVITY_CARD_BACKGROUND": [
-            "#2d0333"
+            "#42b3f5"
         ],
         "CHAT_BACKGROUND": [
             "#b30ba7"
