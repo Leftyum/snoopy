@@ -69,7 +69,7 @@
             "#000000"
         ],
         "BACKGROUND_MODIFIER_HOVER": [
-            "#transparent"
+            "#ffffff"
         ],
         "BACKGROUND_MODIFIER_ACTIVE": [
             "transparent"
@@ -84,7 +84,7 @@
             "#b30ba7"
         ],
         "SCROLLBAR_THIN_TRACK": [
-            "000000"
+            "#b30ba7"
         ],
         "SCROLLBAR_AUTO_THUMB": [
             "#b30ba7"
@@ -148,8 +148,8 @@
     },
     "spec": 2,
     "background": {
-        "url": "https://imgur.com/a/yTPNd0G",
+        "url": "https://media.discordapp.net/attachments/1347203722538651781/1355217151321178152/IMG_3879.jpg?ex=67e81fd3&is=67e6ce53&hm=8a39ba7085363e67c2105ec0641d80d9bbae5ebacf49935aa1b75733ab19ba39&",
         "alpha": 0.5,
         "color": "#3264a8"
     }
-    }
+}
