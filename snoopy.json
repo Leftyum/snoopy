@@ -185,7 +185,8 @@
             "StatusIdle": "#FFA000",
             "StatusDND": "#FF0000",
             "StatusOffline": "#737F8D",
-            "StatusOnline": "#00FF00"
+            "StatusOnline": "#00FF00
+            "customFont": "Chakra Petch"
         }
     },
     "background": {
