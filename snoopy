@@ -1,4 +1,3 @@
-```lua
 -- Universal Auto Clicker Script (LocalScript in StarterPlayerScripts)
 local UserInputService = game:GetService("UserInputService")
 local CPS = 10                   -- Clicks per second; adjust as desired
@@ -33,4 +32,3 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
         isClicking = false
     end
 end)
-```
