@@ -1,29 +1,41 @@
--- Auto Clicker for PC (BedWars)
--- Works when holding left-click, toggle with F6
-local UserInputService = game:GetService("UserInputService")
-local VirtualUser = game:GetService("VirtualUser")
+-- AutoClickerModule (ModuleScript)
 
-local CPS = 12 -- Clicks per second
-local TOGGLE_KEY = Enum.KeyCode.F6
-local clickDelay = 1 / CPS
-local enabled = false
+local AutoClicker = {}  -- Create an empty table
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == TOGGLE_KEY then
-        enabled = not enabled
-        print("Auto Clicker is now " .. (enabled and "ON" or "OFF"))
-    end
-end)
+-- Initialize the auto clicker with an optional CPS parameter (default: 10)
+function AutoClicker.Init(CPS)
+    CPS = CPS or 10
+    local clickDelay = 1 / CPS
+    local UserInputService = game:GetService("UserInputService")
+    
+    local isClicking = false
 
-task.spawn(function()
-    while true do
-        if enabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-            VirtualUser:Button1Down(Vector2.new(), workspace.CurrentCamera.CFrame)
-            task.wait(0.01)
-            VirtualUser:Button1Up(Vector2.new(), workspace.CurrentCamera.CFrame)
-            task.wait(clickDelay)
-        else
-            task.wait(0.05)
+    -- Auto click loop: continuously runs after initialization
+    task.spawn(function()
+        while true do
+            if isClicking then
+                -- Replace this with your actual click logic (or fire a RemoteEvent)
+                print("Auto Click!")
+                task.wait(clickDelay)
+            else
+                task.wait(0.1)
+            end
         end
-    end
-end)
+    end)
+
+    -- Listen for left mouse button press
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and not gameProcessed then
+            isClicking = true
+        end
+    end)
+
+    -- Listen for left mouse button release
+    UserInputService.InputEnded:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isClicking = false
+        end
+    end)
+end
+
+return AutoClicker
