@@ -1,41 +1,34 @@
--- AutoClickerModule (ModuleScript)
+-- LocalScript for Auto Clicking (put in StarterPlayerScripts)
+local UserInputService = game:GetService("UserInputService")
+local CPS = 10                   -- Clicks per second (adjust as needed)
+local clickDelay = 1 / CPS
+local isClicking = false
 
-local AutoClicker = {}  -- Create an empty table
-
--- Initialize the auto clicker with an optional CPS parameter (default: 10)
-function AutoClicker.Init(CPS)
-    CPS = CPS or 10
-    local clickDelay = 1 / CPS
-    local UserInputService = game:GetService("UserInputService")
-    
-    local isClicking = false
-
-    -- Auto click loop: continuously runs after initialization
-    task.spawn(function()
-        while true do
-            if isClicking then
-                -- Replace this with your actual click logic (or fire a RemoteEvent)
-                print("Auto Click!")
-                task.wait(clickDelay)
-            else
-                task.wait(0.1)
-            end
+-- Auto click loop: runs continuously after initialization
+task.spawn(function()
+    while true do
+        if isClicking then
+            -- Replace this print with your actual click logic or RemoteEvent call
+            print("Auto Click!")
+            task.wait(clickDelay)
+        else
+            task.wait(0.1)
         end
-    end)
+    end
+end)
 
-    -- Listen for left mouse button press
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and not gameProcessed then
+-- Listen for input start for both touch and mouse button 1
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed then
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             isClicking = true
         end
-    end)
+    end
+end)
 
-    -- Listen for left mouse button release
-    UserInputService.InputEnded:Connect(function(input, gameProcessed)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            isClicking = false
-        end
-    end)
-end
-
-return AutoClicker
+-- Listen for input end for both touch and mouse button 1
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isClicking = false
+    end
+end)
