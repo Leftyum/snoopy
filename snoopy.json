@@ -1,26 +1,29 @@
---// Auto Clicker Script
--- Adjust the ClickInterval for speed (in seconds)
-local ClickInterval = 0.1 -- 0.1 seconds = 10 clicks per second
+-- Auto Clicker for PC (BedWars)
+-- Works when holding left-click, toggle with F6
+local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
-local RunService = game:GetService("RunService")
 
-local clicking = true
+local CPS = 12 -- Clicks per second
+local TOGGLE_KEY = Enum.KeyCode.F6
+local clickDelay = 1 / CPS
+local enabled = false
 
--- Toggle function (optional)
-function toggleClicker()
-    clicking = not clicking
-    print("Auto Clicker is now " .. (clicking and "ON" or "OFF"))
-end
-
--- Start clicking loop
-task.spawn(function()
-    while true do
-        if clicking then
-            VirtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            VirtualUser:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-        end
-        task.wait(ClickInterval)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == TOGGLE_KEY then
+        enabled = not enabled
+        print("Auto Clicker is now " .. (enabled and "ON" or "OFF"))
     end
 end)
 
-print("Auto Clicker Started.")
+task.spawn(function()
+    while true do
+        if enabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+            VirtualUser:Button1Down(Vector2.new(), workspace.CurrentCamera.CFrame)
+            task.wait(0.01)
+            VirtualUser:Button1Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+            task.wait(clickDelay)
+        else
+            task.wait(0.05)
+        end
+    end
+end)
