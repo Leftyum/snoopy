@@ -1,34 +1,47 @@
--- Universal Auto Clicker Script (LocalScript in StarterPlayerScripts)
-local UserInputService = game:GetService("UserInputService")
-local CPS = 10                   -- Clicks per second; adjust as desired
-local clickDelay = 1 / CPS
-local isClicking = false
+-- Create Screen GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Lefts Auto Clicker"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game.CoreGui or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
--- Auto click loop: runs continuously after initialization
-task.spawn(function()
-    while true do
-        if isClicking then
-            -- Replace the print statement with your actual in-game action.
-            mouse1click()
-            task.wait(clickDelay)
-        else
-            task.wait(0.1)
-        end
-    end
+-- Create Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0.5, -100, 0.5, -50)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Create Button
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+toggleBtn.Text = "Auto Click: OFF"
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextSize = 20
+toggleBtn.Parent = frame
+
+-- Auto clicker logic
+local autoClick = false
+local player = game.Players.LocalPlayer
+local runService = game:GetService("RunService")
+
+toggleBtn.MouseButton1Click:Connect(function()
+    autoClick = not autoClick
+    toggleBtn.Text = autoClick and "Auto Click: ON" or "Auto Click: OFF"
 end)
 
--- Detect when the player begins input (touch on mobile or mouse click on PC)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed then
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            isClicking = true
+runService.RenderStepped:Connect(function()
+    if autoClick then
+        -- Simulate click (works in games with RemoteEvents or ClickDetectors)
+        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+        if tool and tool:FindFirstChild("Activate") then
+            tool:Activate()
         end
-    end
-end)
 
--- Detect when the player ends input
-UserInputService.InputEnded:Connect(function(input, gameProcessed)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isClicking = false
+        -- Or fire a click event (for clicker games)
+        -- Replace this with the game-specific remote event
+        -- game:GetService("ReplicatedStorage").Click:FireServer()
     end
 end)
