@@ -5,37 +5,56 @@ local running = false
 -- Only run on mobile
 if not uis.TouchEnabled then return end
 
--- GUI Setup
-local screenGui = Instance.new("ScreenGui", player.PlayerGui)
-local toggleButton = Instance.new("TextButton", screenGui)
-toggleButton.Size = UDim2.new(0, 150, 0, 50)
-toggleButton.Position = UDim2.new(0, 20, 0, 20)
-toggleButton.Text = "Auto Clicker OFF"
-toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+-- Reusable function to create GUI
+local function createAutoClickerGui()
+    -- Remove old GUI if exists
+    if player:FindFirstChild("PlayerGui"):FindFirstChild("LEFTAC") then
+        player.PlayerGui.LEFTAC:Destroy()
+    end
 
--- Auto Clicker Function
-local function autoClick()
+    -- GUI Setup
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "LEFTAC"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0, 150, 0, 50)
+    toggleButton.Position = UDim2.new(0, 20, 0, 20)
+    toggleButton.Text = "Auto Clicker OFF"
+    toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleButton.Font = Enum.Font.SourceSans
+    toggleButton.TextSize = 24
+    toggleButton.Parent = screenGui
+
+    -- Toggle Button Logic
+    toggleButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            running = not running
+            toggleButton.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
+            toggleButton.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+            if running then task.spawn(autoClick) end
+        end
+    end)
+end
+
+-- Auto Clicker Logic
+function autoClick()
     while running do
-        for _, player in pairs(game.Players:GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local part = Instance.new("Part")
-                part.Size = Vector3.new(1, 1, 1)
-                part.Position = player.Character.HumanoidRootPart.Position + Vector3.new(0, -3.69, 0)
-                part.Anchored, part.CanCollide, part.Transparency = true, false, 1
-                part.Parent = game.Workspace
-                game:GetService("Debris"):AddItem(part, 0.1)
-            end
+        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+        if tool then
+            tool:Activate()
         end
         task.wait(0.1)
     end
 end
 
--- Toggle Button
-toggleButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        running = not running
-        toggleButton.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
-        toggleButton.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-        if running then task.spawn(autoClick) end
-    end
+-- Initial GUI Setup
+createAutoClickerGui()
+
+-- Re-create GUI after respawn to ensure it sticks
+player.CharacterAdded:Connect(function()
+    task.wait(1) -- Wait for PlayerGui to reload
+    createAutoClickerGui()
 end)
