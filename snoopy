@@ -1,42 +1,67 @@
 -- Services
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 -- GUI Setup
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "LeftsAutoClicker"
 screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true -- Important for mobile so GUI appears at top
+screenGui.IgnoreGuiInset = true -- So it shows at the top on mobile
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Toggle GUI visibility button
-local toggleUIBtn = Instance.new("TextButton")
-toggleUIBtn.Name = "ToggleUIButton"
-toggleUIBtn.Size = UDim2.new(0, 120, 0, 40)
-toggleUIBtn.Position = UDim2.new(0, 10, 0, 10)
-toggleUIBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-toggleUIBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleUIBtn.Font = Enum.Font.SourceSansBold
-toggleUIBtn.TextSize = 16
-toggleUIBtn.Text = "Show GUI"
-toggleUIBtn.AutoButtonColor = true
-toggleUIBtn.Parent = screenGui
-
--- Main Frame (AutoClick Toggle)
+-- Draggable Frame
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 180, 0, 60)
-frame.Position = UDim2.new(0.5, -90, 0.5, -30)
+frame.Position = UDim2.new(0, 10, 0, 10) -- Top-left corner
 frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-frame.Visible = false
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true -- Works on PC
 frame.Parent = screenGui
 
--- Toggle Auto Click Button
+-- Make it draggable on mobile manually
+local dragging, dragInput, dragStart, startPos
+
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                               startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updateDrag(input)
+    end
+end)
+
+-- Auto Click Toggle Button
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(1, 0, 1, 0)
 toggleBtn.Text = "Auto Click: OFF"
 toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- Red by default (off)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- Red when off
 toggleBtn.Font = Enum.Font.SourceSansBold
 toggleBtn.TextSize = 20
 toggleBtn.Parent = frame
@@ -50,7 +75,6 @@ local function updateToggleButton()
     toggleBtn.BackgroundColor3 = autoClick and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
 end
 
--- Toggle Clicker On/Off
 toggleBtn.MouseButton1Click:Connect(function()
     autoClick = not autoClick
     updateToggleButton()
@@ -61,24 +85,18 @@ toggleBtn.MouseButton1Click:Connect(function()
             while autoClick do
                 local cam = workspace.CurrentCamera
                 if cam then
-                    local screenCenter = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
+                    local center = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
 
-                    -- Simulate a tap at screen center
-                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, screenCenter, true, game)
-                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, screenCenter, false, game)
+                    -- Mobile tap at screen center
+                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, center, true, game)
+                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, center, false, game)
                 end
-                task.wait(0.2) -- Tap every 0.2 seconds
+                task.wait(0.2) -- Delay between taps
             end
             clicking = false
         end)
     end
 end)
 
--- Show/Hide GUI
-toggleUIBtn.MouseButton1Click:Connect(function()
-    frame.Visible = not frame.Visible
-    toggleUIBtn.Text = frame.Visible and "Hide GUI" or "Show GUI"
-end)
-
--- Initial update
+-- Init
 updateToggleButton()
