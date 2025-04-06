@@ -1,81 +1,62 @@
--- MOBILE AUTO CLICKER SCRIPT FOR ROBLOX BEDWARS (ANDROID + iOS)
-
-if not game:GetService("UserInputService").TouchEnabled then return end
-
+local uis = game:GetService("UserInputService")
 local player = game.Players.LocalPlayer
-local gui = Instance.new("ScreenGui")
-gui.Name = "LEFTAC"
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-gui.Parent = player:WaitForChild("PlayerGui")
+local running = false
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 100)
-frame.Position = UDim2.new(0, 50, 0, 50)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
+-- Only run on mobile
+if not uis.TouchEnabled then return end
 
-local toggle = Instance.new("TextButton")
-toggle.Size = UDim2.new(1, -20, 0, 40)
-toggle.Position = UDim2.new(0, 10, 0, 10)
-toggle.Text = "Auto Clicker OFF"
-toggle.TextColor3 = Color3.new(1, 1, 1)
-toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-toggle.Font = Enum.Font.SourceSansBold
-toggle.TextSize = 18
-toggle.Parent = frame
+-- Setup GUI (assumes your GUI already exists)
+local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+screenGui.Name = "MobileClickerGUI"
+screenGui.ResetOnSpawn = false
 
-local cpsBox = Instance.new("TextBox")
-cpsBox.Size = UDim2.new(1, -20, 0, 30)
-cpsBox.Position = UDim2.new(0, 10, 0, 60)
-cpsBox.PlaceholderText = "CPS (Clicks Per Second)"
-cpsBox.Text = ""
-cpsBox.ClearTextOnFocus = false
-cpsBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-cpsBox.TextColor3 = Color3.new(1, 1, 1)
-cpsBox.Font = Enum.Font.SourceSans
-cpsBox.TextSize = 16
-cpsBox.Parent = frame
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 150, 0, 50)
+toggleButton.Position = UDim2.new(0, 20, 0, 20)
+toggleButton.Text = "Auto Clicker OFF"
+toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+toggleButton.Parent = screenGui
 
-local clicking = false
-
-local function getCPS()
-    local cps = tonumber(cpsBox.Text)
-    return cps and math.clamp(cps, 1, 50) or 10
-end
+-- Auto click touch logic
+local isTouching = false
 
 local function simulateClick()
-    local bedwars = getrenv()._G or getgenv()
-    local clickEvent = bedwars and bedwars.MouseButton1Click
-    if clickEvent and typeof(clickEvent) == "RBXScriptSignal" then
-        clickEvent:Fire()
-    else
-        -- fallback method
-        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-        if tool then
-            tool:Activate()
-        end
-    end
+	while running and isTouching do
+		-- Fire a simulated touch tap
+		local inputPosition = uis:GetMouseLocation()
+		local touchInput = Instance.new("BindableEvent")
+		touchInput:Fire()
+		touchInput:Destroy()
+
+		-- Fire touch tap using VirtualInputManager (only works in supported executors)
+		local success, virtualInput = pcall(function()
+			return game:GetService("VirtualInputManager")
+		end)
+
+		if success then
+			virtualInput:SendTouchEvent(Enum.UserInputType.Touch, {inputPosition.X, inputPosition.Y}, Enum.UserInputState.Begin, false)
+			virtualInput:SendTouchEvent(Enum.UserInputType.Touch, {inputPosition.X, inputPosition.Y}, Enum.UserInputState.End, false)
+		end
+
+		task.wait(1 / 12) -- 12 CPS (customize this)
+	end
 end
 
-local function autoClicker()
-    while clicking do
-        simulateClick()
-        task.wait(1 / getCPS())
-    end
-end
+toggleButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		running = not running
+		toggleButton.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
+		toggleButton.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+	end
+end)
 
-toggle.TouchTap:Connect(function()
-    clicking = not clicking
-    if clicking then
-        toggle.Text = "Auto Clicker ON"
-        toggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        task.spawn(autoClicker)
-    else
-        toggle.Text = "Auto Clicker OFF"
-        toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    end
+uis.TouchStarted:Connect(function()
+	if running then
+		isTouching = true
+		task.spawn(simulateClick)
+	end
+end)
+
+uis.TouchEnded:Connect(function()
+	isTouching = false
 end)
