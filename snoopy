@@ -1,60 +1,153 @@
-local uis = game:GetService("UserInputService")
-local player = game.Players.LocalPlayer
-local running = false
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Only run on mobile
-if not uis.TouchEnabled then return end
+-- Variables
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local autoClickerEnabled = false
+local cps = 10 -- Default Clicks Per Second
+local guiOpen = true
 
--- Reusable function to create GUI
-local function createAutoClickerGui()
-    -- Remove old GUI if exists
-    if player:FindFirstChild("PlayerGui"):FindFirstChild("LEFTAC") then
-        player.PlayerGui.LEFTAC:Destroy()
-    end
-
-    -- GUI Setup
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "LEFTAC"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = player:WaitForChild("PlayerGui")
-
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Size = UDim2.new(0, 150, 0, 50)
-    toggleButton.Position = UDim2.new(0, 20, 0, 20)
-    toggleButton.Text = "Auto Clicker OFF"
-    toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleButton.Font = Enum.Font.SourceSans
-    toggleButton.TextSize = 24
-    toggleButton.Parent = screenGui
-
-    -- Toggle Button Logic
-    toggleButton.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            running = not running
-            toggleButton.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
-            toggleButton.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-            if running then task.spawn(autoClick) end
-        end
-    end)
+-- Ensure the script runs only on mobile devices
+if not UserInputService.TouchEnabled then
+    return
 end
 
--- Auto Clicker Logic
-function autoClick()
-    while running do
-        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoClickerGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Create Toggle Button to Show/Hide Main Frame
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 100, 0, 50)
+toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.Text = "Hide GUI"
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+toggleButton.Parent = screenGui
+
+-- Create Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+-- Create Auto-Clicker Toggle Button
+local autoClickerButton = Instance.new("TextButton")
+autoClickerButton.Size = UDim2.new(0, 200, 0, 50)
+autoClickerButton.Position = UDim2.new(0.5, -100, 0.2, 0)
+autoClickerButton.Text = "Auto Clicker: OFF"
+autoClickerButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+autoClickerButton.Parent = mainFrame
+
+-- Create CPS Slider Label
+local cpsLabel = Instance.new("TextLabel")
+cpsLabel.Size = UDim2.new(0, 200, 0, 30)
+cpsLabel.Position = UDim2.new(0.5, -100, 0.5, 0)
+cpsLabel.Text = "CPS: " .. cps
+cpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+cpsLabel.BackgroundTransparency = 1
+cpsLabel.Parent = mainFrame
+
+-- Create CPS Slider
+local cpsSlider = Instance.new("TextButton")
+cpsSlider.Size = UDim2.new(0, 200, 0, 20)
+cpsSlider.Position = UDim2.new(0.5, -100, 0.6, 0)
+cpsSlider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+cpsSlider.Text = ""
+cpsSlider.Parent = mainFrame
+
+local sliderButton = Instance.new("Frame")
+sliderButton.Size = UDim2.new(0, 20, 0, 20)
+sliderButton.Position = UDim2.new(0, 0, 0, 0)
+sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sliderButton.Parent = cpsSlider
+
+-- Toggle Auto-Clicker Function
+local function toggleAutoClicker()
+    autoClickerEnabled = not autoClickerEnabled
+    if autoClickerEnabled then
+        autoClickerButton.Text = "Auto Clicker: ON"
+        autoClickerButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        autoClickerButton.Text = "Auto Clicker: OFF"
+        autoClickerButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+autoClickerButton.MouseButton1Click:Connect(toggleAutoClicker)
+
+-- Toggle GUI Visibility
+toggleButton.MouseButton1Click:Connect(function()
+    guiOpen = not guiOpen
+    mainFrame.Visible = guiOpen
+    if guiOpen then
+        toggleButton.Text = "Hide GUI"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        toggleButton.Text = "Show GUI"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end)
+
+-- CPS Slider Functionality
+local dragging = false
+
+sliderButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+    end
+end)
+
+sliderButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+cpsSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        local sliderSize = cpsSlider.AbsoluteSize.X
+        local sliderPos = cpsSlider.AbsolutePosition.X
+        local inputPos = input.Position.X
+        local relativePos = math.clamp(inputPos - sliderPos, 0, sliderSize)
+        sliderButton.Position = UDim2.new(0, relativePos - sliderButton.Size.X.Offset / 2, 0, 0)
+        cps = math.floor((relativePos / sliderSize) * 20) -- Max CPS set to 20
+        cpsLabel.Text = "CPS: " .. cps
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.Touch then
+        local sliderSize = cpsSlider.AbsoluteSize.X
+        local sliderPos = cpsSlider.AbsolutePosition.X
+        local inputPos = input.Position.X
+        local relativePos = math.clamp(inputPos - sliderPos, 0, sliderSize)
+        sliderButton.Position = UDim2.new(0, relativePos - sliderButton.Size.X.Offset / 2, 0, 0)
+        cps = math.floor((relativePos / sliderSize) * 20) -- Max CPS set to 20
+        cpsLabel.Text = "CPS: " .. cps
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- Auto-Clicker Functionality
+RunService.RenderStepped:Connect(function()
+    if autoClickerEnabled and player.Character then
+        local tool = player.Character:FindFirstChildOfClass("Tool")
         if tool then
             tool:Activate()
+            wait(1 / cps)
         end
-        task.wait(0.1)
     end
-end
-
--- Initial GUI Setup
-createAutoClickerGui()
-
--- Re-create GUI after respawn to ensure it sticks
-player.CharacterAdded:Connect(function()
-    task.wait(1) -- Wait for PlayerGui to reload
-    createAutoClickerGui()
 end)
