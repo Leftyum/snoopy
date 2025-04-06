@@ -10,6 +10,25 @@ screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Frame to hold the toggle button and the auto-clicker UI
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 60)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.BorderSizePixel = 0
+frame.Visible = false -- Initially hidden
+frame.Parent = screenGui
+
+-- Toggle Button
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+toggleBtn.Text = "Show Auto Clicker"
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextSize = 20
+toggleBtn.Parent = frame
+
 -- CPS (clicks per second)
 local cps = 5
 local clicking = false
@@ -47,4 +66,10 @@ end)
 
 UserInputService.TouchEnded:Connect(function(input, processed)
     stopClicking()
+end)
+
+-- Toggle visibility of the auto-clicker frame (show/hide)
+toggleBtn.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+    toggleBtn.Text = frame.Visible and "Hide Auto Clicker" or "Show Auto Clicker"
 end)
