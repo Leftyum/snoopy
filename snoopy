@@ -1,47 +1,72 @@
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local player = Players.LocalPlayer
+
 -- Create Screen GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "Lefts Auto Clicker"
+screenGui.Name = "LeftsAutoClicker"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = game.CoreGui or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Create Frame
+-- Toggle GUI visibility button
+local toggleUIBtn = Instance.new("TextButton")
+toggleUIBtn.Name = "ToggleUIButton"
+toggleUIBtn.Size = UDim2.new(0, 100, 0, 30)
+toggleUIBtn.Position = UDim2.new(0, 10, 0, 10)
+toggleUIBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleUIBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleUIBtn.Font = Enum.Font.SourceSansBold
+toggleUIBtn.TextSize = 16
+toggleUIBtn.Text = "Show GUI"
+toggleUIBtn.Parent = screenGui
+
+-- Main Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 100)
-frame.Position = UDim2.new(0.5, -100, 0.5, -50)
+frame.Size = UDim2.new(0, 160, 0, 60)
+frame.Position = UDim2.new(0.5, -80, 0.5, -30)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 0
+frame.Visible = false
 frame.Parent = screenGui
 
--- Create Button
+-- Toggle Auto Click Button
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(1, 0, 1, 0)
 toggleBtn.Text = "Auto Click: OFF"
 toggleBtn.TextColor3 = Color3.new(1, 1, 1)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 toggleBtn.Font = Enum.Font.SourceSansBold
-toggleBtn.TextSize = 20
+toggleBtn.TextSize = 18
 toggleBtn.Parent = frame
 
--- Auto clicker logic
+-- Auto click logic
 local autoClick = false
-local player = game.Players.LocalPlayer
-local runService = game:GetService("RunService")
 
 toggleBtn.MouseButton1Click:Connect(function()
     autoClick = not autoClick
     toggleBtn.Text = autoClick and "Auto Click: ON" or "Auto Click: OFF"
 end)
 
-runService.RenderStepped:Connect(function()
-    if autoClick then
-        -- Simulate click (works in games with RemoteEvents or ClickDetectors)
-        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-        if tool and tool:FindFirstChild("Activate") then
-            tool:Activate()
-        end
+toggleUIBtn.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+    toggleUIBtn.Text = frame.Visible and "Hide GUI" or "Show GUI"
+end)
 
-        -- Or fire a click event (for clicker games)
-        -- Replace this with the game-specific remote event
-        -- game:GetService("ReplicatedStorage").Click:FireServer()
+-- Simulate click in the center of the screen
+local function clickMiddle()
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    local x = viewportSize.X / 2
+    local y = viewportSize.Y / 2
+
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
+end
+
+RunService.RenderStepped:Connect(function()
+    if autoClick then
+        clickMiddle()
     end
 end)
