@@ -1,78 +1,81 @@
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local Players = game:GetService("Players")
+-- MOBILE AUTO CLICKER SCRIPT FOR ROBLOX BEDWARS (ANDROID + iOS)
 
-if not UIS.TouchEnabled or UIS.KeyboardEnabled then return end -- Ensure it's MOBILE only
+if not game:GetService("UserInputService").TouchEnabled then return end
 
-local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
-
--- GUI Setup
+local player = game.Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
 gui.Name = "LEFTAC"
 gui.ResetOnSpawn = false
-gui.Parent = PlayerGui
+gui.IgnoreGuiInset = true
+gui.Parent = player:WaitForChild("PlayerGui")
 
--- Main Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 140)
-frame.Position = UDim2.new(0.05, 0, 0.1, 0)
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0, 50, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
 
--- Toggle Button
 local toggle = Instance.new("TextButton")
 toggle.Size = UDim2.new(1, -20, 0, 40)
 toggle.Position = UDim2.new(0, 10, 0, 10)
 toggle.Text = "Auto Clicker OFF"
-toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 toggle.Font = Enum.Font.SourceSansBold
-toggle.TextSize = 20
+toggle.TextSize = 18
 toggle.Parent = frame
 
--- CPS TextBox
 local cpsBox = Instance.new("TextBox")
 cpsBox.Size = UDim2.new(1, -20, 0, 30)
 cpsBox.Position = UDim2.new(0, 10, 0, 60)
-cpsBox.Text = "10"
-cpsBox.PlaceholderText = "CPS"
-cpsBox.TextColor3 = Color3.new(1, 1, 1)
-cpsBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-cpsBox.Font = Enum.Font.SourceSans
-cpsBox.TextSize = 20
+cpsBox.PlaceholderText = "CPS (Clicks Per Second)"
+cpsBox.Text = ""
 cpsBox.ClearTextOnFocus = false
+cpsBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+cpsBox.TextColor3 = Color3.new(1, 1, 1)
+cpsBox.Font = Enum.Font.SourceSans
+cpsBox.TextSize = 16
 cpsBox.Parent = frame
 
--- Auto Clicker State
 local clicking = false
-local connection
 
--- Function to simulate mobile click
-local function click()
-    local pos = UIS:GetMouseLocation()
-    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, pos, 0, true, game)
-    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, pos, 0, false, game)
+local function getCPS()
+    local cps = tonumber(cpsBox.Text)
+    return cps and math.clamp(cps, 1, 50) or 10
 end
 
--- Toggle Clicker
-toggle.MouseButton1Click:Connect(function()
-    clicking = not clicking
-    toggle.Text = clicking and "Auto Clicker ON" or "Auto Clicker OFF"
-    toggle.BackgroundColor3 = clicking and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
-
-    if clicking then
-        local cps = tonumber(cpsBox.Text) or 10
-        local interval = 1 / math.clamp(cps, 1, 100)
-
-        connection = RunService.RenderStepped:Connect(function(dt)
-            click()
-            task.wait(interval)
-        end)
+local function simulateClick()
+    local bedwars = getrenv()._G or getgenv()
+    local clickEvent = bedwars and bedwars.MouseButton1Click
+    if clickEvent and typeof(clickEvent) == "RBXScriptSignal" then
+        clickEvent:Fire()
     else
-        if connection then connection:Disconnect() end
+        -- fallback method
+        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+        if tool then
+            tool:Activate()
+        end
+    end
+end
+
+local function autoClicker()
+    while clicking do
+        simulateClick()
+        task.wait(1 / getCPS())
+    end
+end
+
+toggle.TouchTap:Connect(function()
+    clicking = not clicking
+    if clicking then
+        toggle.Text = "Auto Clicker ON"
+        toggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        task.spawn(autoClicker)
+    else
+        toggle.Text = "Auto Clicker OFF"
+        toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
 end)
