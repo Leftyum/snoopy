@@ -3,31 +3,31 @@ local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 
--- Create Screen GUI
+-- GUI Setup
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "LeftsAutoClicker"
 screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true -- Makes sure it shows at top on mobile
-screenGui.Parent = player:WaitForChild("PlayerGui") -- Mobile-compatible
+screenGui.IgnoreGuiInset = true -- Important for mobile so GUI appears at top
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
 -- Toggle GUI visibility button
 local toggleUIBtn = Instance.new("TextButton")
 toggleUIBtn.Name = "ToggleUIButton"
-toggleUIBtn.Size = UDim2.new(0, 120, 0, 35)
+toggleUIBtn.Size = UDim2.new(0, 120, 0, 40)
 toggleUIBtn.Position = UDim2.new(0, 10, 0, 10)
-toggleUIBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleUIBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 toggleUIBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleUIBtn.Font = Enum.Font.SourceSansBold
 toggleUIBtn.TextSize = 16
 toggleUIBtn.Text = "Show GUI"
+toggleUIBtn.AutoButtonColor = true
 toggleUIBtn.Parent = screenGui
 
--- Main Frame
+-- Main Frame (AutoClick Toggle)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 160, 0, 60)
-frame.Position = UDim2.new(0.5, -80, 0.5, -30)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
+frame.Size = UDim2.new(0, 180, 0, 60)
+frame.Position = UDim2.new(0.5, -90, 0.5, -30)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 frame.Visible = false
 frame.Parent = screenGui
 
@@ -36,25 +36,21 @@ local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(1, 0, 1, 0)
 toggleBtn.Text = "Auto Click: OFF"
 toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Red when off
+toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- Red by default (off)
 toggleBtn.Font = Enum.Font.SourceSansBold
-toggleBtn.TextSize = 18
+toggleBtn.TextSize = 20
 toggleBtn.Parent = frame
 
--- Auto click logic
+-- Auto Click Logic
 local autoClick = false
-local clicking = false -- Prevent stacking loops
+local clicking = false
 
 local function updateToggleButton()
-    if autoClick then
-        toggleBtn.Text = "Auto Click: ON"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- Green
-    else
-        toggleBtn.Text = "Auto Click: OFF"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- Red
-    end
+    toggleBtn.Text = autoClick and "Auto Click: ON" or "Auto Click: OFF"
+    toggleBtn.BackgroundColor3 = autoClick and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
 end
 
+-- Toggle Clicker On/Off
 toggleBtn.MouseButton1Click:Connect(function()
     autoClick = not autoClick
     updateToggleButton()
@@ -63,26 +59,26 @@ toggleBtn.MouseButton1Click:Connect(function()
         clicking = true
         task.spawn(function()
             while autoClick do
-                local camera = workspace.CurrentCamera
-                if camera then
-                    local size = camera.ViewportSize
-                    local pos = Vector2.new(size.X / 2, size.Y / 2)
+                local cam = workspace.CurrentCamera
+                if cam then
+                    local screenCenter = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
 
-                    -- Simulate a mobile tap at the center
-                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, pos, true, game)
-                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, pos, false, game)
+                    -- Simulate a tap at screen center
+                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, screenCenter, true, game)
+                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, screenCenter, false, game)
                 end
-                task.wait(0.2) -- Delay between taps
+                task.wait(0.2) -- Tap every 0.2 seconds
             end
             clicking = false
         end)
     end
 end)
 
+-- Show/Hide GUI
 toggleUIBtn.MouseButton1Click:Connect(function()
     frame.Visible = not frame.Visible
     toggleUIBtn.Text = frame.Visible and "Hide GUI" or "Show GUI"
 end)
 
--- Initial button color/text
+-- Initial update
 updateToggleButton()
