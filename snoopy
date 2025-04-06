@@ -1,7 +1,6 @@
 -- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 
@@ -37,36 +36,43 @@ local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(1, 0, 1, 0)
 toggleBtn.Text = "Auto Click: OFF"
 toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- RED by default (OFF)
 toggleBtn.Font = Enum.Font.SourceSansBold
 toggleBtn.TextSize = 18
 toggleBtn.Parent = frame
 
 -- Auto click logic
 local autoClick = false
+local clicking = false -- Prevent multiple loops
+
+local function updateToggleButton()
+    if autoClick then
+        toggleBtn.Text = "Auto Click: ON"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0) -- Green
+    else
+        toggleBtn.Text = "Auto Click: OFF"
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- Red
+    end
+end
 
 toggleBtn.MouseButton1Click:Connect(function()
     autoClick = not autoClick
-    toggleBtn.Text = autoClick and "Auto Click: ON" or "Auto Click: OFF"
-end)
+    updateToggleButton()
 
-toggleUIBtn.MouseButton1Click:Connect(function()
-    frame.Visible = not frame.Visible
-    toggleUIBtn.Text = frame.Visible and "Hide GUI" or "Show GUI"
-end)
+    if autoClick and not clicking then
+        clicking = true
+        task.spawn(function()
+            while autoClick do
+                local camera = workspace.CurrentCamera
+                if camera then
+                    local size = camera.ViewportSize
+                    local pos = Vector2.new(size.X / 2, size.Y / 2)
 
--- Simulate click in the center of the screen
-local function clickMiddle()
-    local viewportSize = workspace.CurrentCamera.ViewportSize
-    local x = viewportSize.X / 2
-    local y = viewportSize.Y / 2
-
-    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
-    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
-end
-
-RunService.RenderStepped:Connect(function()
-    if autoClick then
-        clickMiddle()
-    end
-end)
+                    -- Simulate a tap at the center
+                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, pos, true, game)
+                    VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, pos, false, game)
+                end
+                task.wait(0.2) -- Delay between taps
+            end
+            clicking = false
+       
