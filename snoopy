@@ -1,80 +1,41 @@
--- Services
-local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
+local uis = game:GetService("UserInputService")
+local player = game.Players.LocalPlayer
+local running = false
 
-local player = Players.LocalPlayer
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "TouchAutoClicker"
-screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
-screenGui.Parent = player:WaitForChild("PlayerGui")
+-- Only run on mobile
+if not uis.TouchEnabled then return end
 
--- Frame to hold the toggle button and the auto-clicker UI
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 60)
-frame.Position = UDim2.new(0, 10, 0, 10)
-frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-frame.BorderSizePixel = 0
-frame.Visible = false -- Initially hidden
-frame.Parent = screenGui
+-- GUI Setup
+local screenGui = Instance.new("ScreenGui", player.PlayerGui)
+local toggleButton = Instance.new("TextButton", screenGui)
+toggleButton.Size = UDim2.new(0, 150, 0, 50)
+toggleButton.Position = UDim2.new(0, 20, 0, 20)
+toggleButton.Text = "Auto Clicker OFF"
+toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+
+-- Auto Clicker Function
+local function autoClick()
+    while running do
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local part = Instance.new("Part")
+                part.Size = Vector3.new(1, 1, 1)
+                part.Position = player.Character.HumanoidRootPart.Position + Vector3.new(0, -3.69, 0)
+                part.Anchored, part.CanCollide, part.Transparency = true, false, 1
+                part.Parent = game.Workspace
+                game:GetService("Debris"):AddItem(part, 0.1)
+            end
+        end
+        task.wait(0.1)
+    end
+end
 
 -- Toggle Button
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(1, 0, 1, 0)
-toggleBtn.Text = "Show Auto Clicker"
-toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-toggleBtn.Font = Enum.Font.SourceSansBold
-toggleBtn.TextSize = 20
-toggleBtn.Parent = frame
-
--- CPS (clicks per second)
-local cps = 5
-local clicking = false
-
--- Click function
-local function startClicking()
-    if clicking then return end
-    clicking = true
-
-    task.spawn(function()
-        while clicking do
-            local cam = workspace.CurrentCamera
-            if cam then
-                local center = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
-
-                -- Simulate a tap at the screen center
-                VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, center, true, game)
-                VirtualInputManager:SendTouchEvent(Enum.UserInputType.Touch, 0, center, false, game)
-            end
-            task.wait(1 / cps)
-        end
-    end)
-end
-
-local function stopClicking()
-    clicking = false
-end
-
--- Detect screen press and release
-UserInputService.TouchStarted:Connect(function(input, processed)
-    if not processed then
-        startClicking()
+toggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        running = not running
+        toggleButton.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
+        toggleButton.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        if running then task.spawn(autoClick) end
     end
 end)
-
-UserInputService.TouchEnded:Connect(function(input, processed)
-    stopClicking()
-end)
-
--- Toggle visibility of the auto-clicker frame (show/hide)
-toggleBtn.MouseButton1Click:Connect(function()
-    frame.Visible = not frame.Visible
-    toggleBtn.Text = frame.Visible and "Hide Auto Clicker" or "Show Auto Clicker"
-end)
-
--- Ensure the GUI appears on mobile devices
-screenGui.ResetOnSpawn = false  -- Ensure it remains on screen if the player respawns
-screenGui.IgnoreGuiInset = true -- Allows the GUI to stay within the screen bounds on mobile
-frame.Visible = true -- Make sure the frame is visible right away on mobile
