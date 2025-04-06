@@ -73,3 +73,8 @@ toggleBtn.MouseButton1Click:Connect(function()
     frame.Visible = not frame.Visible
     toggleBtn.Text = frame.Visible and "Hide Auto Clicker" or "Show Auto Clicker"
 end)
+
+-- Ensure the GUI appears on mobile devices
+screenGui.ResetOnSpawn = false  -- Ensure it remains on screen if the player respawns
+screenGui.IgnoreGuiInset = true -- Allows the GUI to stay within the screen bounds on mobile
+frame.Visible = true -- Make sure the frame is visible right away on mobile
