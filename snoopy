@@ -1,62 +1,117 @@
 local uis = game:GetService("UserInputService")
 local player = game.Players.LocalPlayer
 local running = false
+local cps = 12
+local isTouching = false
 
 -- Only run on mobile
 if not uis.TouchEnabled then return end
 
--- Setup GUI (assumes your GUI already exists)
-local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+-- GUI Setup
+local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MobileClickerGUI"
 screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Toggle Button
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 150, 0, 50)
 toggleButton.Position = UDim2.new(0, 20, 0, 20)
 toggleButton.Text = "Auto Clicker OFF"
 toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 20
+toggleButton.Active = true
+toggleButton.Draggable = true
 toggleButton.Parent = screenGui
 
--- Auto click touch logic
-local isTouching = false
+-- CPS Label
+local cpsLabel = Instance.new("TextLabel")
+cpsLabel.Size = UDim2.new(0, 150, 0, 30)
+cpsLabel.Position = UDim2.new(0, 20, 0, 80)
+cpsLabel.BackgroundTransparency = 1
+cpsLabel.TextColor3 = Color3.new(1, 1, 1)
+cpsLabel.Font = Enum.Font.SourceSans
+cpsLabel.TextSize = 18
+cpsLabel.Text = "CPS: " .. cps
+cpsLabel.Parent = screenGui
 
+-- Slider Bar
+local sliderBackground = Instance.new("Frame")
+sliderBackground.Size = UDim2.new(0, 150, 0, 20)
+sliderBackground.Position = UDim2.new(0, 20, 0, 115)
+sliderBackground.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+sliderBackground.Parent = screenGui
+
+-- Slider Button
+local sliderButton = Instance.new("TextButton")
+sliderButton.Size = UDim2.new(0, 20, 1, 0)
+sliderButton.Position = UDim2.new(0, (cps / 30) * 130, 0, 0) -- Start at 12 CPS
+sliderButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+sliderButton.Text = ""
+sliderButton.AutoButtonColor = false
+sliderButton.Parent = sliderBackground
+
+-- Slider Logic
+local dragging = false
+local maxCPS = 30
+local minCPS = 1
+
+sliderButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+    end
+end)
+
+sliderButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+uis.TouchMoved:Connect(function(input)
+    if dragging then
+        local absPos = sliderBackground.AbsolutePosition.X
+        local absSize = sliderBackground.AbsoluteSize.X
+        local touchX = input.Position.X
+        local relativeX = math.clamp(touchX - absPos, 0, absSize - sliderButton.AbsoluteSize.X)
+        sliderButton.Position = UDim2.new(0, relativeX, 0, 0)
+
+        local ratio = relativeX / (absSize - sliderButton.AbsoluteSize.X)
+        cps = math.clamp(math.floor(minCPS + (maxCPS - minCPS) * ratio + 0.5), minCPS, maxCPS)
+        cpsLabel.Text = "CPS: " .. cps
+    end
+end)
+
+-- Click Function (Delta-Compatible)
 local function simulateClick()
-	while running and isTouching do
-		-- Fire a simulated touch tap
-		local inputPosition = uis:GetMouseLocation()
-		local touchInput = Instance.new("BindableEvent")
-		touchInput:Fire()
-		touchInput:Destroy()
-
-		-- Fire touch tap using VirtualInputManager (only works in supported executors)
-		local success, virtualInput = pcall(function()
-			return game:GetService("VirtualInputManager")
-		end)
-
-		if success then
-			virtualInput:SendTouchEvent(Enum.UserInputType.Touch, {inputPosition.X, inputPosition.Y}, Enum.UserInputState.Begin, false)
-			virtualInput:SendTouchEvent(Enum.UserInputType.Touch, {inputPosition.X, inputPosition.Y}, Enum.UserInputState.End, false)
-		end
-
-		task.wait(1 / 12) -- 12 CPS (customize this)
-	end
+    local vim = game:GetService("VirtualInputManager")
+    while running and isTouching do
+        local inputPosition = uis:GetMouseLocation()
+        vim:SendTouchTap(Vector2.new(inputPosition.X, inputPosition.Y))
+        task.wait(1 / cps)
+    end
 end
 
+-- Toggle Button Logic
 toggleButton.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		running = not running
-		toggleButton.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
-		toggleButton.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-	end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        running = not running
+        toggleButton.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
+        toggleButton.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    end
 end)
 
+-- Start clicking when screen touched
 uis.TouchStarted:Connect(function()
-	if running then
-		isTouching = true
-		task.spawn(simulateClick)
-	end
+    if running then
+        isTouching = true
+        task.spawn(simulateClick)
+    end
 end)
 
+-- Stop clicking when touch ends
 uis.TouchEnded:Connect(function()
-	isTouching = false
+    isTouching = false
 end)
