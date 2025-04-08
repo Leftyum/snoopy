@@ -1,116 +1,138 @@
 local uis = game:GetService("UserInputService")
 local player = game.Players.LocalPlayer
 
+-- Ensure the script runs only on mobile devices
 if not uis.TouchEnabled then return end
 
+-- Auto clicker variables
 local running = false
 local cps = 12
 local dragging = false
 
--- GUI Setup
+-- Create ScreenGui
 local gui = Instance.new("ScreenGui")
 gui.Name = "LEFTAC"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- Frame
+-- Create main frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 140, 0, 100)
-frame.Position = UDim2.new(1, -150, 0, 30)
+frame.Size = UDim2.new(0, 120, 0, 80)
+frame.Position = UDim2.new(1, -130, 0, 30)
 frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 frame.BackgroundTransparency = 0.2
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
+frame.Visible = false
 frame.Parent = gui
 
--- Toggle button
+-- Create toggle button
 local toggle = Instance.new("TextButton")
-toggle.Size = UDim2.new(0, 120, 0, 30)
+toggle.Size = UDim2.new(0, 100, 0, 30)
 toggle.Position = UDim2.new(0, 10, 0, 10)
 toggle.Text = "Auto OFF"
 toggle.TextColor3 = Color3.new(1, 1, 1)
 toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 toggle.Font = Enum.Font.SourceSansBold
-toggle.TextSize = 16
+toggle.TextSize = 14
 toggle.Parent = frame
 
--- CPS Label
+-- Create CPS label
 local cpsLabel = Instance.new("TextLabel")
-cpsLabel.Size = UDim2.new(0, 120, 0, 20)
+cpsLabel.Size = UDim2.new(0, 100, 0, 20)
 cpsLabel.Position = UDim2.new(0, 10, 0, 45)
 cpsLabel.Text = "CPS: " .. cps
 cpsLabel.TextColor3 = Color3.new(1, 1, 1)
 cpsLabel.BackgroundTransparency = 1
 cpsLabel.Font = Enum.Font.SourceSans
-cpsLabel.TextSize = 14
+cpsLabel.TextSize = 12
 cpsLabel.Parent = frame
 
--- Slider bar
+-- Create slider bar
 local bar = Instance.new("Frame")
-bar.Size = UDim2.new(0, 120, 0, 16)
-bar.Position = UDim2.new(0, 10, 0, 70)
+bar.Size = UDim2.new(0, 100, 0, 16)
+bar.Position = UDim2.new(0, 10, 0, 65)
 bar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 bar.BorderSizePixel = 0
 bar.Parent = frame
 
--- Slider knob
+-- Create slider knob
 local knob = Instance.new("TextButton")
 knob.Size = UDim2.new(0, 16, 1, 0)
-knob.Position = UDim2.new(0, (cps / 30) * 104, 0, 0)
+knob.Position = UDim2.new(0, (cps / 30) * 84, 0, 0)
 knob.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 knob.Text = ""
 knob.AutoButtonColor = false
 knob.BorderSizePixel = 0
 knob.Parent = bar
 
--- Drag to change CPS
+-- Create open/close button
+local openCloseButton = Instance.new("TextButton")
+openCloseButton.Size = UDim2.new(0, 120, 0, 30)
+openCloseButton.Position = UDim2.new(1, -130, 0, 0)
+openCloseButton.Text = "Open LEFTAC"
+openCloseButton.TextColor3 = Color3.new(1, 1, 1)
+openCloseButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+openCloseButton.Font = Enum.Font.SourceSansBold
+openCloseButton.TextSize = 14
+openCloseButton.Parent = gui
+
+-- Toggle GUI visibility
+openCloseButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        frame.Visible = not frame.Visible
+        openCloseButton.Text = frame.Visible and "Close LEFTAC" or "Open LEFTAC"
+    end
+end)
+
+-- Dragging functionality for CPS slider
 knob.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-	end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+    end
 end)
 
 knob.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
 end)
 
 uis.TouchMoved:Connect(function(input)
-	if dragging then
-		local absPos = bar.AbsolutePosition.X
-		local size = bar.AbsoluteSize.X
-		local x = input.Position.X
-		local relative = math.clamp(x - absPos, 0, size - knob.AbsoluteSize.X)
-		knob.Position = UDim2.new(0, relative, 0, 0)
-		local ratio = relative / (size - knob.AbsoluteSize.X)
-		cps = math.clamp(math.floor(1 + (30 - 1) * ratio + 0.5), 1, 30)
-		cpsLabel.Text = "CPS: " .. cps
-	end
+    if dragging then
+        local absPos = bar.AbsolutePosition.X
+        local size = bar.AbsoluteSize.X
+        local x = input.Position.X
+        local relative = math.clamp(x - absPos, 0, size - knob.AbsoluteSize.X)
+        knob.Position = UDim2.new(0, relative, 0, 0)
+        local ratio = relative / (size - knob.AbsoluteSize.X)
+        cps = math.clamp(math.floor(1 + (30 - 1) * ratio + 0.5), 1, 30)
+        cpsLabel.Text = "CPS: " .. cps
+    end
 end)
 
--- Auto Click Function
+-- Auto-click function
 local function autoClick()
-	while running do
-		local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-		if tool then
-			pcall(function()
-				tool:Activate()
-			end)
-		end
-		task.wait(1 / cps)
-	end
+    while running do
+        local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+        if tool then
+            pcall(function()
+                tool:Activate()
+            end)
+        end
+        task.wait(1 / cps)
+    end
 end
 
--- Toggle clicker
+-- Toggle auto-clicker
 toggle.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		running = not running
-		toggle.Text = running and "Auto ON" or "Auto OFF"
-		toggle.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-		if running then
-			task.spawn(autoClick)
-		end
-	end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        running = not running
+        toggle.Text = running and "Auto ON" or "Auto OFF"
+        toggle.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        if running then
+            task.spawn(autoClick)
+        end
+    end
 end)
