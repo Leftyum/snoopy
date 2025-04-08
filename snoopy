@@ -1,25 +1,23 @@
 local uis = game:GetService("UserInputService")
 local player = game.Players.LocalPlayer
 
--- Only run on mobile
 if not uis.TouchEnabled then return end
 
--- Auto clicker logic
 local running = false
 local cps = 12
 local dragging = false
 
--- GUI setup
+-- GUI Setup
 local gui = Instance.new("ScreenGui")
-gui.Name = "AutoClickerGUI"
+gui.Name = "LEFTAC"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- Main frame
+-- Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 180, 0, 150)
-frame.Position = UDim2.new(1, -190, 0, 30)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Size = UDim2.new(0, 140, 0, 100)
+frame.Position = UDim2.new(1, -150, 0, 30)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 frame.BackgroundTransparency = 0.2
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -28,65 +26,45 @@ frame.Parent = gui
 
 -- Toggle button
 local toggle = Instance.new("TextButton")
-toggle.Size = UDim2.new(0, 160, 0, 40)
+toggle.Size = UDim2.new(0, 120, 0, 30)
 toggle.Position = UDim2.new(0, 10, 0, 10)
-toggle.Text = "Auto Clicker OFF"
+toggle.Text = "Auto OFF"
 toggle.TextColor3 = Color3.new(1, 1, 1)
 toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 toggle.Font = Enum.Font.SourceSansBold
-toggle.TextSize = 20
+toggle.TextSize = 16
 toggle.Parent = frame
 
--- CPS label
+-- CPS Label
 local cpsLabel = Instance.new("TextLabel")
-cpsLabel.Size = UDim2.new(0, 160, 0, 20)
-cpsLabel.Position = UDim2.new(0, 10, 0, 60)
+cpsLabel.Size = UDim2.new(0, 120, 0, 20)
+cpsLabel.Position = UDim2.new(0, 10, 0, 45)
 cpsLabel.Text = "CPS: " .. cps
 cpsLabel.TextColor3 = Color3.new(1, 1, 1)
-cpsLabel.Font = Enum.Font.SourceSans
-cpsLabel.TextSize = 18
 cpsLabel.BackgroundTransparency = 1
+cpsLabel.Font = Enum.Font.SourceSans
+cpsLabel.TextSize = 14
 cpsLabel.Parent = frame
 
 -- Slider bar
 local bar = Instance.new("Frame")
-bar.Size = UDim2.new(0, 160, 0, 20)
-bar.Position = UDim2.new(0, 10, 0, 90)
-bar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+bar.Size = UDim2.new(0, 120, 0, 16)
+bar.Position = UDim2.new(0, 10, 0, 70)
+bar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 bar.BorderSizePixel = 0
 bar.Parent = frame
 
 -- Slider knob
 local knob = Instance.new("TextButton")
-knob.Size = UDim2.new(0, 20, 1, 0)
-knob.Position = UDim2.new(0, (cps/30)*140, 0, 0)
+knob.Size = UDim2.new(0, 16, 1, 0)
+knob.Position = UDim2.new(0, (cps / 30) * 104, 0, 0)
 knob.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 knob.Text = ""
 knob.AutoButtonColor = false
+knob.BorderSizePixel = 0
 knob.Parent = bar
 
--- Show/Hide button
-local toggleGUI = Instance.new("TextButton")
-toggleGUI.Size = UDim2.new(0, 120, 0, 30)
-toggleGUI.Position = UDim2.new(1, -130, 0, 0)
-toggleGUI.Text = "Show Clicker"
-toggleGUI.TextColor3 = Color3.new(1,1,1)
-toggleGUI.Font = Enum.Font.SourceSansBold
-toggleGUI.TextSize = 16
-toggleGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
-toggleGUI.Parent = gui
-
-local guiVisible = true
-
-toggleGUI.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Touch then
-		guiVisible = not guiVisible
-		frame.Visible = guiVisible
-		toggleGUI.Text = guiVisible and "Hide Clicker" or "Show Clicker"
-	end
-end)
-
--- Drag slider to adjust CPS
+-- Drag to change CPS
 knob.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
@@ -112,7 +90,7 @@ uis.TouchMoved:Connect(function(input)
 	end
 end)
 
--- Auto-click logic (tool:Activate)
+-- Auto Click Function
 local function autoClick()
 	while running do
 		local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
@@ -125,11 +103,11 @@ local function autoClick()
 	end
 end
 
--- Toggle auto clicker
+-- Toggle clicker
 toggle.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Touch then
 		running = not running
-		toggle.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
+		toggle.Text = running and "Auto ON" or "Auto OFF"
 		toggle.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 		if running then
 			task.spawn(autoClick)
