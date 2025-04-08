@@ -1,74 +1,99 @@
 local uis = game:GetService("UserInputService")
 local player = game.Players.LocalPlayer
-local vim = game:GetService("VirtualInputManager")
-local cps = 12
+
+-- Only run on mobile
+if not uis.TouchEnabled then return end
+
+-- Auto clicker logic
 local running = false
+local cps = 12
+local dragging = false
 
-if not uis.TouchEnabled then return end -- Mobile only
+-- GUI setup
+local gui = Instance.new("ScreenGui")
+gui.Name = "AutoClickerGUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
--- GUI Setup
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MobileClickerGUI"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
+-- Main frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 180, 0, 150)
+frame.Position = UDim2.new(1, -190, 0, 30)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BackgroundTransparency = 0.2
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
 
--- Main Container (draggable)
-local container = Instance.new("Frame")
-container.Size = UDim2.new(0, 180, 0, 180)
-container.Position = UDim2.new(0, 20, 0, 20)
-container.BackgroundColor3 = Color3.new(0, 0, 0)
-container.BackgroundTransparency = 0.2
-container.Active = true
-container.Draggable = true
-container.Parent = screenGui
+-- Toggle button
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(0, 160, 0, 40)
+toggle.Position = UDim2.new(0, 10, 0, 10)
+toggle.Text = "Auto Clicker OFF"
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+toggle.Font = Enum.Font.SourceSansBold
+toggle.TextSize = 20
+toggle.Parent = frame
 
--- Toggle Button
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 160, 0, 50)
-toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.Text = "Auto Clicker OFF"
-toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-toggleButton.TextColor3 = Color3.new(1, 1, 1)
-toggleButton.Font = Enum.Font.SourceSansBold
-toggleButton.TextSize = 20
-toggleButton.Parent = container
-
--- CPS Label
+-- CPS label
 local cpsLabel = Instance.new("TextLabel")
-cpsLabel.Size = UDim2.new(0, 160, 0, 30)
-cpsLabel.Position = UDim2.new(0, 10, 0, 70)
-cpsLabel.BackgroundTransparency = 1
+cpsLabel.Size = UDim2.new(0, 160, 0, 20)
+cpsLabel.Position = UDim2.new(0, 10, 0, 60)
+cpsLabel.Text = "CPS: " .. cps
 cpsLabel.TextColor3 = Color3.new(1, 1, 1)
 cpsLabel.Font = Enum.Font.SourceSans
 cpsLabel.TextSize = 18
-cpsLabel.Text = "CPS: " .. cps
-cpsLabel.Parent = container
+cpsLabel.BackgroundTransparency = 1
+cpsLabel.Parent = frame
 
--- Slider Background
-local sliderBackground = Instance.new("Frame")
-sliderBackground.Size = UDim2.new(0, 160, 0, 20)
-sliderBackground.Position = UDim2.new(0, 10, 0, 105)
-sliderBackground.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-sliderBackground.Parent = container
+-- Slider bar
+local bar = Instance.new("Frame")
+bar.Size = UDim2.new(0, 160, 0, 20)
+bar.Position = UDim2.new(0, 10, 0, 90)
+bar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+bar.BorderSizePixel = 0
+bar.Parent = frame
 
--- Slider Button
-local sliderButton = Instance.new("TextButton")
-sliderButton.Size = UDim2.new(0, 20, 1, 0)
-sliderButton.Position = UDim2.new(0, (cps / 30) * 140, 0, 0) -- 140 = max slide range
-sliderButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-sliderButton.Text = ""
-sliderButton.AutoButtonColor = false
-sliderButton.Parent = sliderBackground
+-- Slider knob
+local knob = Instance.new("TextButton")
+knob.Size = UDim2.new(0, 20, 1, 0)
+knob.Position = UDim2.new(0, (cps/30)*140, 0, 0)
+knob.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+knob.Text = ""
+knob.AutoButtonColor = false
+knob.Parent = bar
 
--- Drag Slider to Adjust CPS
-local dragging = false
-sliderButton.InputBegan:Connect(function(input)
+-- Show/Hide button
+local toggleGUI = Instance.new("TextButton")
+toggleGUI.Size = UDim2.new(0, 120, 0, 30)
+toggleGUI.Position = UDim2.new(1, -130, 0, 0)
+toggleGUI.Text = "Show Clicker"
+toggleGUI.TextColor3 = Color3.new(1,1,1)
+toggleGUI.Font = Enum.Font.SourceSansBold
+toggleGUI.TextSize = 16
+toggleGUI.BackgroundColor3 = Color3.fromRGB(30,30,30)
+toggleGUI.Parent = gui
+
+local guiVisible = true
+
+toggleGUI.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Touch then
+		guiVisible = not guiVisible
+		frame.Visible = guiVisible
+		toggleGUI.Text = guiVisible and "Hide Clicker" or "Show Clicker"
+	end
+end)
+
+-- Drag slider to adjust CPS
+knob.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
 	end
 end)
 
-sliderButton.InputEnded:Connect(function(input)
+knob.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Touch then
 		dragging = false
 	end
@@ -76,34 +101,36 @@ end)
 
 uis.TouchMoved:Connect(function(input)
 	if dragging then
-		local absPos = sliderBackground.AbsolutePosition.X
-		local absSize = sliderBackground.AbsoluteSize.X
-		local touchX = input.Position.X
-		local relativeX = math.clamp(touchX - absPos, 0, absSize - sliderButton.AbsoluteSize.X)
-		sliderButton.Position = UDim2.new(0, relativeX, 0, 0)
-
-		local ratio = relativeX / (absSize - sliderButton.AbsoluteSize.X)
+		local absPos = bar.AbsolutePosition.X
+		local size = bar.AbsoluteSize.X
+		local x = input.Position.X
+		local relative = math.clamp(x - absPos, 0, size - knob.AbsoluteSize.X)
+		knob.Position = UDim2.new(0, relative, 0, 0)
+		local ratio = relative / (size - knob.AbsoluteSize.X)
 		cps = math.clamp(math.floor(1 + (30 - 1) * ratio + 0.5), 1, 30)
 		cpsLabel.Text = "CPS: " .. cps
 	end
 end)
 
--- Auto Click Function (loop)
+-- Auto-click logic (tool:Activate)
 local function autoClick()
 	while running do
-		local pos = uis:GetMouseLocation()
-		vim:SendTouchTap(Vector2.new(pos.X, pos.Y), Enum.UserInputState.Begin, false)
+		local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+		if tool then
+			pcall(function()
+				tool:Activate()
+			end)
+		end
 		task.wait(1 / cps)
 	end
 end
 
--- Toggle Button Logic
-toggleButton.InputBegan:Connect(function(input)
+-- Toggle auto clicker
+toggle.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Touch then
 		running = not running
-		toggleButton.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
-		toggleButton.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-
+		toggle.Text = running and "Auto Clicker ON" or "Auto Clicker OFF"
+		toggle.BackgroundColor3 = running and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 		if running then
 			task.spawn(autoClick)
 		end
